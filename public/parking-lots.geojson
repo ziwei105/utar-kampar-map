@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "Untitled layer",
+"features": [
+{ "type": "Feature", "properties": { "Name": "Polygon 1" }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 101.1367119, 4.3409922 ], [ 101.1362774, 4.3412275 ], [ 101.1359743, 4.3407408 ], [ 101.1364008, 4.3405509 ], [ 101.1367119, 4.3409922 ] ] ] } }
+]
+}
