@@ -1,16 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>UTAR Parking Map</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <link rel="stylesheet" href="style.css"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schematic Parking Lot</title>
+<style>
+  #parking-container {
+    display: grid;
+    grid-template-columns: repeat(10, 50px);
+    grid-gap: 5px;
+    margin: 20px;
+  }
+
+  .lot {
+    width: 50px;
+    height: 50px;
+    background-color: green; /* default vacant */
+    border: 1px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+</style>
 </head>
 <body>
-  <h1>UTAR Kampar Parking Slots</h1>
-  <div id="map" style="height: 600px;"></div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="script.js"></script>
+<h2>Schematic Parking Lot (50 lots)</h2>
+<div id="parking-container"></div>
+
+<script>
+  const totalLots = 50;
+  const container = document.getElementById("parking-container");
+
+  // Create 50 lots
+  for (let i = 1; i <= totalLots; i++) {
+    const lot = document.createElement("div");
+    lot.className = "lot";
+    lot.id = `lot-${i}`;
+    lot.innerText = i;
+    container.appendChild(lot);
+  }
+
+  // API endpoint
+  const API_URL = "https://of3greluu9.execute-api.ap-southeast-1.amazonaws.com/slots";
+
+  // Fetch data and update lot colors
+  async function fetchParkingData() {
+    try {
+      const response = await fetch(API_URL);
+      const data = await response.json();
+
+      // Reset all to green
+      for (let i = 1; i <= totalLots; i++) {
+        document.getElementById(`lot-${i}`).style.backgroundColor = "green";
+      }
+
+      // Update based on API
+      data.forEach(item => {
+        const lotNumber = parseInt(item.slot_id.slice(1)); // e.g., A1 -> 1
+        const lotDiv = document.getElementById(`lot-${lotNumber}`);
+        if (lotDiv) {
+          lotDiv.style.backgroundColor = item.status === "Occupied" ? "red" : "green";
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching parking data:", error);
+    }
+  }
+
+  // Initial fetch
+  fetchParkingData();
+
+  // Update every 5 seconds
+  setInterval(fetchParkingData, 5000);
+</script>
+
 </body>
 </html>
