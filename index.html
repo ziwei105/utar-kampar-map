@@ -22,6 +22,7 @@
       justify-content: center;
       font-weight: bold;
       color: white;
+      text-align: center;
     }
     .vacant { background-color: green; }
     .occupied { background-color: red; }
@@ -33,36 +34,47 @@
 
   <script>
     const mapContainer = document.getElementById("mapContainer");
+    const containerWidth = mapContainer.clientWidth;
+    const containerHeight = mapContainer.clientHeight;
 
-    // Example mapping for positions of lots (you can adjust to match your GeoJSON)
-    const lotPositions = {}; // Will be populated from GeoJSON
+    let geoBounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity };
+    const lotPositions = {};
 
-    // Fetch parking lot GeoJSON
+    // Fetch GeoJSON
     async function loadGeoJSON() {
       try {
         const response = await fetch("parking-lots.geojson");
         const geojson = await response.json();
 
+        // First, find min/max coordinates
+        geojson.features.forEach(feature => {
+          const [lon, lat] = feature.geometry.coordinates;
+          if (lon < geoBounds.minX) geoBounds.minX = lon;
+          if (lon > geoBounds.maxX) geoBounds.maxX = lon;
+          if (lat < geoBounds.minY) geoBounds.minY = lat;
+          if (lat > geoBounds.maxY) geoBounds.maxY = lat;
+        });
+
+        // Create lot divs
         geojson.features.forEach((feature, index) => {
           const lotId = feature.properties.name || `A${index + 1}`;
-          const bbox = feature.bbox || [0,0,50,50]; // fallback coordinates
-          // Normalize coordinates to fit container (simple example)
-          const x = bbox[0];
-          const y = bbox[1];
-          const width = bbox[2] - bbox[0];
-          const height = bbox[3] - bbox[1];
+          const [lon, lat] = feature.geometry.coordinates;
 
-          lotPositions[lotId] = { x, y, width, height };
+          // Normalize coordinates to fit container
+          const x = ((lon - geoBounds.minX) / (geoBounds.maxX - geoBounds.minX)) * containerWidth;
+          const y = containerHeight - ((lat - geoBounds.minY) / (geoBounds.maxY - geoBounds.minY)) * containerHeight;
 
           const lotDiv = document.createElement("div");
           lotDiv.id = lotId;
           lotDiv.className = "lot vacant";
-          lotDiv.style.left = x + "px";
-          lotDiv.style.top = y + "px";
-          lotDiv.style.width = width + "px";
-          lotDiv.style.height = height + "px";
+          lotDiv.style.left = `${x - 15}px`; // offset half width
+          lotDiv.style.top = `${y - 15}px`;  // offset half height
+          lotDiv.style.width = "30px";
+          lotDiv.style.height = "30px";
           lotDiv.innerText = lotId;
+
           mapContainer.appendChild(lotDiv);
+          lotPositions[lotId] = lotDiv;
         });
 
       } catch (error) {
@@ -77,7 +89,7 @@
         const data = await response.json();
 
         data.forEach(item => {
-          const lotDiv = document.getElementById(item.slot_id);
+          const lotDiv = lotPositions[item.slot_id];
           if (lotDiv) {
             lotDiv.className = item.status.toLowerCase() === "occupied" ? "lot occupied" : "lot vacant";
           }
@@ -95,4 +107,5 @@
   </script>
 </body>
 </html>
+
 
